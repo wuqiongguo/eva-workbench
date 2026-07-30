@@ -287,16 +287,28 @@
       <h2><span class="emoji">📋</span>每日计划</h2>
       <div class="subtitle" id="dailyDate"></div>
     </div>
+    <!-- 日期切换条 -->
+    <div class="section-card" style="padding:10px 14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <button class="btn btn-outline btn-sm" onclick="changeDay(-1)" style="padding:8px 12px;font-size:16px;">◀</button>
+        <div style="text-align:center;flex:1;">
+          <div id="dailyDayLabel" style="font-size:17px;font-weight:700;"></div>
+          <div id="dailyWeekLabel" style="font-size:12px;color:var(--text-secondary);"></div>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="changeDay(1)" style="padding:8px 12px;font-size:16px;">▶</button>
+        <button class="btn btn-sm" style="background:var(--primary);color:#fff;padding:8px 14px;" onclick="goToday()">今天</button>
+      </div>
+    </div>
     <div class="stats-row">
       <div class="stat-card"><div class="num" id="dailyDone">0</div><div class="label">已完成任务</div></div>
       <div class="stat-card"><div class="num" id="dailyTotal">0</div><div class="label">总任务数</div></div>
     </div>
     <div class="section-card">
-      <div class="section-title"><span class="icon">🎯</span>今日重点</div>
-      <div class="form-group"><textarea class="form-textarea" id="dailyFocus" placeholder="今天最重要的一件事是什么？"></textarea></div>
+      <div class="section-title"><span class="icon">🎯</span>重点事项</div>
+      <div class="form-group"><textarea class="form-textarea" id="dailyFocus" placeholder="当天最重要的一件事是什么？"></textarea></div>
     </div>
     <div class="section-card">
-      <div class="section-title"><span class="icon">📊</span>今日进度</div>
+      <div class="section-title"><span class="icon">📊</span>完成进度</div>
       <div style="background:#e5e7eb;border-radius:8px;height:8px;margin-bottom:8px;overflow:hidden;">
         <div id="dailyProgress" style="background:var(--primary);height:100%;width:0%;transition:width 0.3s;"></div>
       </div>
@@ -314,7 +326,7 @@
       <button class="btn btn-primary" onclick="addTask()">添加任务</button>
     </div>
     <div class="section-card">
-      <div class="section-title"><span class="icon">🕐</span>时间轴</div>
+      <div class="section-title"><span class="icon">🕐</span>任务列表</div>
       <ul class="task-list" id="taskList"></ul>
     </div>
   </div>
@@ -862,40 +874,122 @@ function updateDate() {
 }
 updateDate();
 
-// ==================== 每日计划 ====================
+// ==================== 每日计划（支持日期切换） ====================
+var dailySelectedDate = todayStr(); // 当前选中的计划日期
+
+function getTaskKey(d) { return 'tasks_' + (d || dailySelectedDate); }
+function getFocusKey(d) { return 'daily_focus_' + (d || dailySelectedDate); }
+
+function formatDateCN(dStr) {
+  var parts = dStr.split('-');
+  return parts[0] + '年' + parseInt(parts[1]) + '月' + parseInt(parts[2]) + '日';
+}
+function getWeekday(dStr) {
+  var d = new Date(dStr + 'T00:00:00');
+  return '星期' + ['日','一','二','三','四','五','六'][d.getDay()];
+}
+function isToday(dStr) { return dStr === todayStr(); }
+
+function changeDay(offset) {
+  var d = new Date(dailySelectedDate + 'T00:00:00');
+  d.setDate(d.getDate() + offset);
+  dailySelectedDate = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  refreshDaily();
+}
+function goToday() {
+  dailySelectedDate = todayStr();
+  refreshDaily();
+}
+
 function refreshDaily() {
-  var tasks = getData('tasks');
+  var isT = isToday(dailySelectedDate);
+  document.getElementById('dailyDayLabel').textContent = formatDateCN(dailySelectedDate) + (isT ? ' · 今天' : '');
+  document.getElementById('dailyWeekLabel').textContent = getWeekday(dailySelectedDate);
+  document.getElementById('dailyDate').textContent = formatDateCN(dailySelectedDate) + ' ' + getWeekday(dailySelectedDate);
+
+  var tasks = getData(getTaskKey());
   var done = tasks.filter(function(t){ return t.done; }).length;
   document.getElementById('dailyDone').textContent = done;
   document.getElementById('dailyTotal').textContent = tasks.length;
   document.getElementById('dailyProgress').style.width = tasks.length ? (done/tasks.length*100) + '%' : '0%';
   document.getElementById('dailyProgressText').textContent = done + '/' + tasks.length + ' 已完成 (' + (tasks.length ? Math.round(done/tasks.length*100) : 0) + '%)';
+
   var list = document.getElementById('taskList');
   list.innerHTML = '';
-  if (!tasks.length) { list.innerHTML = '<li class="record-empty">暂无任务，添加一个吧</li>'; return; }
-  tasks.forEach(function(t, i){
-    var li = document.createElement('li');
-    li.className = 'task-item' + (t.done ? ' checked' : '');
-    li.innerHTML = '<input type="checkbox" ' + (t.done ? 'checked' : '') + ' onchange="toggleTaskByIdx(' + i + ')">' +
-      '<div style="flex:1;"><div>' + (t.time ? '<span style="color:var(--primary);font-weight:600;">' + t.time + '</span> ' : '') + t.name + '</div>' +
-      '<div style="font-size:12px;color:var(--text-light);margin-top:2px;">' + (t.type || '') + ' ' + (t.priority || '') + (t.note ? ' | ' + t.note : '') + '</div></div>' +
-      '<span style="color:var(--danger);font-size:18px;cursor:pointer;" onclick="deleteTask(' + i + ')">✕</span>';
-    list.appendChild(li);
-  });
-  document.getElementById('dailyFocus').value = getStr('daily_focus');
+  if (!tasks.length) { list.innerHTML = '<li class="record-empty">暂无任务，添加一个吧</li>'; }
+  else {
+    tasks.forEach(function(t, i){
+      var li = document.createElement('li');
+      li.className = 'task-item' + (t.done ? ' checked' : '');
+      li.innerHTML = '<input type="checkbox" ' + (t.done ? 'checked' : '') + ' onchange="toggleTaskByIdx(' + i + ')">' +
+        '<div style="flex:1;"><div>' + (t.time ? '<span style="color:var(--primary);font-weight:600;">' + t.time + '</span> ' : '') + t.name + '</div>' +
+        '<div style="font-size:12px;color:var(--text-light);margin-top:2px;">' + (t.type || '') + ' ' + (t.priority || '') + (t.note ? ' | ' + t.note : '') + '</div></div>' +
+        '<span style="color:var(--danger);font-size:18px;cursor:pointer;" onclick="deleteTask(' + i + ')">✕</span>';
+      list.appendChild(li);
+    });
+  }
+
+  // 加载当天的重点事项
+  document.getElementById('dailyFocus').value = getStr(getFocusKey());
+  // 如果打开的是今天，同步刷新顶部日期
+  if (isT) updateDate();
 }
+
 function addTask() {
   var name = document.getElementById('taskName').value.trim();
   if (!name) { showToast('请输入任务名称'); return; }
-  var tasks = getData('tasks');
-  tasks.push({ name: name, time: document.getElementById('taskTime').value, type: document.getElementById('taskType').value, priority: document.getElementById('taskPriority').value, note: document.getElementById('taskNote').value, done: false, date: todayStr() });
-  setData('tasks', tasks);
+  var tasks = getData(getTaskKey());
+  tasks.push({ name: name, time: document.getElementById('taskTime').value, type: document.getElementById('taskType').value, priority: document.getElementById('taskPriority').value, note: document.getElementById('taskNote').value, done: false });
+  setData(getTaskKey(), tasks);
   document.getElementById('taskName').value = ''; document.getElementById('taskTime').value = ''; document.getElementById('taskNote').value = '';
-  refreshDaily(); showToast('任务已添加');
+  refreshDaily(); showToast('任务已添加（' + formatDateCN(dailySelectedDate) + '）');
 }
-function toggleTaskByIdx(idx) { var tasks = getData('tasks'); tasks[idx].done = !tasks[idx].done; setData('tasks', tasks); refreshDaily(); }
-function deleteTask(idx) { var tasks = getData('tasks'); tasks.splice(idx, 1); setData('tasks', tasks); refreshDaily(); showToast('任务已删除'); }
-document.getElementById('dailyFocus').addEventListener('blur', function(){ setStr('daily_focus', this.value); });
+function toggleTaskByIdx(idx) {
+  var tasks = getData(getTaskKey());
+  tasks[idx].done = !tasks[idx].done;
+  setData(getTaskKey(), tasks);
+  refreshDaily();
+}
+function deleteTask(idx) {
+  var tasks = getData(getTaskKey());
+  tasks.splice(idx, 1);
+  setData(getTaskKey(), tasks);
+  refreshDaily(); showToast('任务已删除');
+}
+
+// 重点事项自动保存
+document.getElementById('dailyFocus').addEventListener('input', function() {
+  setStr(getFocusKey(), this.value);
+});
+
+// 旧数据迁移：把旧的 tasks 数据按日期重新分组
+(function migrateTasks() {
+  var oldTasks = localStorage.getItem('eva_tasks');
+  if (oldTasks) {
+    try {
+      var tasks = JSON.parse(oldTasks);
+      if (Array.isArray(tasks) && tasks.length > 0 && tasks[0].date) {
+        var groups = {};
+        tasks.forEach(function(t) {
+          var d = t.date;
+          if (!groups[d]) groups[d] = [];
+          delete t.date; // 去掉旧 date 字段
+          groups[d].push(t);
+        });
+        for (var d in groups) {
+          localStorage.setItem('eva_tasks_' + d, JSON.stringify(groups[d]));
+        }
+        // 旧 daily_focus 迁移
+        var oldFocus = localStorage.getItem('eva_daily_focus');
+        if (oldFocus) {
+          localStorage.setItem('eva_daily_focus_' + todayStr(), oldFocus);
+        }
+        localStorage.removeItem('eva_tasks');
+        localStorage.removeItem('eva_daily_focus');
+      }
+    } catch(e) {}
+  }
+})();
 
 // ==================== 备忘录 ====================
 function refreshMemo() {
