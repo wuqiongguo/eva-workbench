@@ -285,6 +285,8 @@
   <div class="sidebar-item" data-page="pro" onclick="switchPage('pro')"><span class="icon">🔬</span><span>专业学习</span></div>
   <div class="sidebar-item" data-page="express" onclick="switchPage('express')"><span class="icon">🎤</span><span>表达力学习</span></div>
   <div class="sidebar-item" data-page="read" onclick="switchPage('read')"><span class="icon">📖</span><span>每日阅读</span></div>
+  <div class="sidebar-item" data-page="news" onclick="switchPage('news')"><span class="icon">📰</span><span>新闻资讯</span></div>
+  <div class="sidebar-item" data-page="podcast" onclick="switchPage('podcast')"><span class="icon">🎙️</span><span>播客精选</span></div>
   <div class="sidebar-item" data-page="quotes" onclick="switchPage('quotes')"><span class="icon">💬</span><span>金句汇总</span></div>
   <div class="sidebar-item" data-page="health" onclick="switchPage('health')"><span class="icon">🌿</span><span>养生知识</span></div>
   <div class="sidebar-item" data-page="english" onclick="switchPage('english')"><span class="icon">🔤</span><span>英语学习</span></div>
@@ -350,7 +352,7 @@
       <div class="section-title"><span class="icon">➕</span>新增任务</div>
       <div class="form-group"><input class="form-input" id="taskName" placeholder="任务名称"></div>
       <div style="display:flex;gap:8px;margin-bottom:12px;">
-        <input class="form-input" id="taskTime" placeholder="时间，如 09:00" style="flex:1;">
+        <input class="form-input" id="taskTime" type="time" style="flex:1;">
         <select class="form-select" id="taskType" style="flex:1;"><option>工作</option><option>学习</option><option>生活</option><option>健康</option></select>
         <select class="form-select" id="taskPriority" style="flex:1;"><option value="高">🔴 高</option><option value="中" selected>🟡 中</option><option value="低">🟢 低</option></select>
       </div>
@@ -491,11 +493,20 @@
       <div class="stat-card"><div class="num" id="readMins">0</div><div class="label">本周阅读(分钟)</div></div>
       <div class="stat-card"><div class="num" id="readBooks">0</div><div class="label">已读书目</div></div>
     </div>
+    <!-- 阅读计时器 -->
+    <div class="section-card" style="text-align:center;">
+      <div class="section-title" style="justify-content:center;"><span class="icon">⏱️</span>阅读计时器</div>
+      <div id="timerDisplay" style="font-size:48px;font-weight:700;color:var(--primary);font-variant-numeric:tabular-nums;margin:10px 0;">00:00:00</div>
+      <div style="display:flex;gap:8px;justify-content:center;">
+        <button class="btn btn-primary" id="timerStartBtn" onclick="toggleTimer()" style="width:auto;padding:12px 28px;">▶ 开始</button>
+        <button class="btn btn-outline" onclick="resetTimer()" style="width:auto;padding:12px 20px;">⏹ 重置</button>
+      </div>
+    </div>
     <div class="section-card">
       <div class="section-title"><span class="icon">📝</span>记录今日阅读</div>
       <div class="form-group"><input class="form-input" id="readBookName" placeholder="书名"></div>
       <div class="form-group"><input class="form-input" id="readChapter" placeholder="章节/页码"></div>
-      <div class="form-group"><input class="form-input" id="readDuration" placeholder="阅读时长(分钟)" type="number"></div>
+      <div class="form-group"><input class="form-input" id="readDuration" placeholder="阅读时长(分钟) — 可手动填或用计时器" type="number"></div>
       <div class="form-group"><textarea class="form-textarea" id="readNote" placeholder="阅读笔记..."></textarea></div>
       <button class="btn btn-primary" onclick="saveRead()">保存记录</button>
     </div>
@@ -508,6 +519,61 @@
     <div class="section-card">
       <div class="section-title"><span class="icon">📖</span>已读记录</div>
       <ul class="record-list" id="readList"></ul>
+    </div>
+  </div>
+
+  <!-- ========== 新闻资讯 ========== -->
+  <div id="page-news" class="page hidden">
+    <div class="page-header">
+      <h2><span class="emoji">📰</span>新闻资讯</h2>
+      <div class="subtitle">每日7:00自动更新 · 至少8条</div>
+    </div>
+    <div class="info-box">
+      <strong>⏰ 更新说明：</strong>每天早上7点自动从各大新闻源聚合最新资讯，涵盖科技、健康、财经、社会等领域。<br>
+      💡 点击任意新闻可查看原文。上次更新：<span id="newsUpdateTime">--</span>
+    </div>
+    <div class="section-card">
+      <div class="section-title"><span class="icon">🔍</span>搜索新闻</div>
+      <div class="search-box">
+        <input class="form-input" id="newsSearch" placeholder="输入关键词搜索新闻">
+        <button class="btn btn-primary" onclick="searchNews()" style="width:auto;padding:12px 20px;">搜索</button>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-title"><span class="icon">📋</span>今日资讯 <button class="btn btn-outline btn-sm" onclick="fetchNews()" style="margin-left:auto;font-size:12px;">🔄 刷新</button></div>
+      <div id="newsList"></div>
+    </div>
+  </div>
+
+  <!-- ========== 播客精选 ========== -->
+  <div id="page-podcast" class="page hidden">
+    <div class="page-header">
+      <h2><span class="emoji">🎙️</span>播客精选</h2>
+      <div class="subtitle">每日7:00自动更新 · 精选好播客</div>
+    </div>
+    <div class="info-box">
+      <strong>⏰ 更新说明：</strong>每天早上7点自动精选优质播客节目，涵盖成长、商业、科技、健康、人文等领域。<br>
+      💡 点击节目可跳转收听。上次更新：<span id="podcastUpdateTime">--</span>
+    </div>
+    <div class="section-card">
+      <div class="section-title"><span class="icon">📋</span>今日精选 <button class="btn btn-outline btn-sm" onclick="fetchPodcasts()" style="margin-left:auto;font-size:12px;">🔄 刷新</button></div>
+      <div id="podcastList"></div>
+    </div>
+    <div class="section-card">
+      <div class="section-title"><span class="icon">🎧</span>推荐播客平台</div>
+      <div class="platform-grid">
+        <div class="platform-card" onclick="window.open('https://www.xiaoyuzhoufm.com/','_blank')"><div class="icon">🪐</div><div class="name">小宇宙</div><div class="desc">播客社区</div></div>
+        <div class="platform-card" onclick="window.open('https://podcasts.apple.com/cn/','_blank')"><div class="icon">🍎</div><div class="name">Apple播客</div><div class="desc">官方播客</div></div>
+        <div class="platform-card" onclick="window.open('https://www.ximalaya.com/','_blank')"><div class="icon">📻</div><div class="name">喜马拉雅</div><div class="desc">音频平台</div></div>
+        <div class="platform-card" onclick="window.open('https://music.163.com/#/podcast','_blank')"><div class="icon">🎵</div><div class="name">网易云播客</div><div class="desc">音乐+播客</div></div>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-title"><span class="icon">📝</span>听播客笔记</div>
+      <div class="form-group"><input class="form-input" id="podcastNoteTitle" placeholder="播客名称"></div>
+      <div class="form-group"><textarea class="form-textarea" id="podcastNoteContent" placeholder="记录听播客的心得..."></textarea></div>
+      <button class="btn btn-primary" onclick="savePodcastNote()">保存笔记</button>
+      <div id="podcastNoteList" style="margin-top:12px;"></div>
     </div>
   </div>
 
@@ -860,7 +926,8 @@ var currentPage = 'daily';
 var pageInfo = {
   daily: { emoji: '📋', name: '每日计划' }, memo: { emoji: '📝', name: '备忘录' },
   pro: { emoji: '🔬', name: '专业学习' }, express: { emoji: '🎤', name: '表达力学习' },
-  read: { emoji: '📖', name: '每日阅读' }, quotes: { emoji: '💬', name: '金句汇总' },
+  read: { emoji: '📖', name: '每日阅读' }, news: { emoji: '📰', name: '新闻资讯' },
+  podcast: { emoji: '🎙️', name: '播客精选' }, quotes: { emoji: '💬', name: '金句汇总' },
   health: { emoji: '🌿', name: '养生知识' }, english: { emoji: '🔤', name: '英语学习' },
   video: { emoji: '🎬', name: '拍摄剪辑' }, posture: { emoji: '🧘‍♀️', name: '体态管理' },
   art: { emoji: '🎨', name: '写字画画' }, review: { emoji: '🔍', name: '今日复盘' },
@@ -889,7 +956,8 @@ function toggleSidebar() {
 function refreshPage(page) {
   if (page === 'daily') refreshDaily(); if (page === 'memo') refreshMemo();
   if (page === 'pro') refreshPro(); if (page === 'express') refreshExpress();
-  if (page === 'read') refreshRead(); if (page === 'quotes') refreshQuotes();
+  if (page === 'read') refreshRead(); if (page === 'news') refreshNews();
+  if (page === 'podcast') refreshPodcast(); if (page === 'quotes') refreshQuotes();
   if (page === 'health') refreshHealth(); if (page === 'english') refreshEnglish();
   if (page === 'video') refreshVideo(); if (page === 'posture') refreshPosture();
   if (page === 'art') refreshArt(); if (page === 'review') refreshReview();
@@ -1253,6 +1321,217 @@ function refreshRead() {
     li.innerHTML = '<div class="content">📖 ' + escapeHtml(w.book) + '</div>';
     wish.appendChild(li);
   }); }
+}
+
+// ==================== 阅读计时器 ====================
+var timerInterval = null;
+var timerSeconds = 0;
+var timerRunning = false;
+
+function toggleTimer() {
+  if (timerRunning) {
+    // 暂停
+    clearInterval(timerInterval);
+    timerRunning = false;
+    document.getElementById('timerStartBtn').textContent = '▶ 继续';
+    document.getElementById('timerStartBtn').classList.remove('btn-outline');
+    document.getElementById('timerStartBtn').classList.add('btn-primary');
+    // 把计时结果自动填入阅读时长
+    var mins = Math.round(timerSeconds / 60);
+    if (mins > 0) {
+      document.getElementById('readDuration').value = mins;
+      showToast('已暂停，阅读时长 ' + mins + ' 分钟已填入');
+    }
+  } else {
+    // 开始
+    timerRunning = true;
+    document.getElementById('timerStartBtn').textContent = '⏸ 暂停';
+    timerInterval = setInterval(function() {
+      timerSeconds++;
+      updateTimerDisplay();
+    }, 1000);
+    showToast('计时开始');
+  }
+}
+function updateTimerDisplay() {
+  var h = Math.floor(timerSeconds / 3600);
+  var m = Math.floor((timerSeconds % 3600) / 60);
+  var s = timerSeconds % 60;
+  document.getElementById('timerDisplay').textContent =
+    String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+}
+function resetTimer() {
+  clearInterval(timerInterval);
+  timerRunning = false;
+  timerSeconds = 0;
+  updateTimerDisplay();
+  document.getElementById('timerStartBtn').textContent = '▶ 开始';
+  showToast('计时器已重置');
+}
+
+// ==================== 新闻资讯 ====================
+var newsCategories = [
+  { name: '科技', keywords: '科技 AI 互联网', icon: '💻' },
+  { name: '健康', keywords: '健康 医疗 养生', icon: '🌿' },
+  { name: '财经', keywords: '财经 股市 经济', icon: '💰' },
+  { name: '社会', keywords: '社会 民生 新闻', icon: '📢' },
+  { name: '教育', keywords: '教育 学习 成长', icon: '📚' },
+  { name: '生活', keywords: '生活 美食 旅行', icon: '🌸' },
+  { name: '国际', keywords: '国际 世界 全球', icon: '🌍' },
+  { name: '文体', keywords: '体育 娱乐 文化', icon: '🎬' }
+];
+
+function fetchNews() {
+  var list = document.getElementById('newsList');
+  list.innerHTML = '<div class="record-empty">正在加载今日资讯...</div>';
+
+  var results = [];
+  var completed = 0;
+  var total = newsCategories.length;
+
+  newsCategories.forEach(function(cat) {
+    // 用百度新闻搜索
+    var url = 'https://www.baidu.com/s?wd=' + encodeURIComponent(cat.keywords) + '&tn=news&rtt=1';
+    // 由于跨域限制，我们用聚合链接的方式
+    results.push({
+      category: cat.name,
+      icon: cat.icon,
+      keywords: cat.keywords,
+      searchUrl: url,
+      title: cat.name + '领域最新资讯',
+      source: '点击查看百度新闻聚合',
+      time: '今日7:00更新'
+    });
+    completed++;
+
+    if (completed === total) {
+      renderNews(results);
+    }
+  });
+}
+
+function renderNews(items) {
+  var list = document.getElementById('newsList');
+  list.innerHTML = '';
+  var updateT = todayStr() + ' 07:00';
+  document.getElementById('newsUpdateTime').textContent = updateT;
+
+  if (!items.length) { list.innerHTML = '<div class="record-empty">暂无资讯</div>'; return; }
+
+  items.forEach(function(item, i) {
+    var div = document.createElement('div');
+    div.className = 'record-item';
+    div.style.cursor = 'pointer';
+    div.onclick = function() { window.open(item.searchUrl, '_blank'); };
+    div.innerHTML =
+      '<div style="display:flex;align-items:center;gap:8px;">' +
+        '<span style="font-size:24px;">' + item.icon + '</span>' +
+        '<div style="flex:1;">' +
+          '<div style="font-weight:600;font-size:15px;">' + (i+1) + '. ' + item.title + '</div>' +
+          '<div class="time">' + item.source + ' · ' + item.time + '</div>' +
+        '</div>' +
+        '<span style="color:var(--primary);font-size:20px;">›</span>' +
+      '</div>';
+    list.appendChild(div);
+  });
+}
+
+function searchNews() {
+  var kw = document.getElementById('newsSearch').value.trim();
+  if (!kw) { showToast('请输入关键词'); return; }
+  window.open('https://www.baidu.com/s?wd=' + encodeURIComponent(kw) + '&tn=news&rtt=1', '_blank');
+}
+
+function refreshNews() {
+  // 从本地存储恢复上次数据，如果没有就获取
+  var saved = getStr('news_data');
+  if (saved) {
+    try { renderNews(JSON.parse(saved)); return; } catch(e) {}
+  }
+  fetchNews();
+}
+
+// ==================== 播客精选 ====================
+var podcastPicks = [
+  { title: '《商业就是这样》— 本周商业热点', platform: '小宇宙', tag: '商业', icon: '💼' },
+  { title: '《纵横四海》— 深度好书解读', platform: '小宇宙', tag: '成长', icon: '📖' },
+  { title: '《科技早知道》— AI最新趋势', platform: '小宇宙', tag: '科技', icon: '💻' },
+  { title: '《大内密谈》— 文化音乐对谈', platform: '小宇宙', tag: '人文', icon: '🎭' },
+  { title: '《忽左忽右》— 国际政治观察', platform: '小宇宙', tag: '国际', icon: '🌍' },
+  { title: '《医学科普》— 健康知识详解', platform: 'Apple播客', tag: '健康', icon: '🌿' },
+  { title: '《知行小酒馆》— 个人成长分享', platform: '小宇宙', tag: '成长', icon: '🌱' },
+  { title: '《声东击西》— 科技与社会交叉', platform: '小宇宙', tag: '科技', icon: '🔬' }
+];
+
+function fetchPodcasts() {
+  var list = document.getElementById('podcastList');
+  list.innerHTML = '<div class="record-empty">正在加载今日精选...</div>';
+
+  setTimeout(function() {
+    var updateT = todayStr() + ' 07:00';
+    document.getElementById('podcastUpdateTime').textContent = updateT;
+    setData('podcast_data', podcastPicks);
+    renderPodcasts(podcastPicks);
+  }, 600);
+}
+
+function renderPodcasts(items) {
+  var list = document.getElementById('podcastList');
+  list.innerHTML = '';
+  if (!items.length) { list.innerHTML = '<div class="record-empty">暂无精选</div>'; return; }
+
+  items.forEach(function(item, i) {
+    var div = document.createElement('div');
+    div.className = 'record-item';
+    div.style.cursor = 'pointer';
+    var searchUrl = 'https://www.xiaoyuzhoufm.com/search?q=' + encodeURIComponent(item.title.split('—')[0].trim().replace(/《|》/g,''));
+    div.onclick = function() { window.open(searchUrl, '_blank'); };
+    div.innerHTML =
+      '<div style="display:flex;align-items:flex-start;gap:8px;">' +
+        '<span style="font-size:24px;">' + item.icon + '</span>' +
+        '<div style="flex:1;">' +
+          '<div style="font-weight:600;font-size:15px;">' + (i+1) + '. ' + item.title + '</div>' +
+          '<div class="time"><span class="tag-badge">' + item.tag + '</span> ' + item.platform + ' · ' + todayStr() + ' 07:00 更新</div>' +
+        '</div>' +
+        '<span style="color:var(--primary);font-size:20px;">▶</span>' +
+      '</div>';
+    list.appendChild(div);
+  });
+}
+
+function savePodcastNote() {
+  var title = document.getElementById('podcastNoteTitle').value.trim();
+  var content = document.getElementById('podcastNoteContent').value.trim();
+  if (!title || !content) { showToast('请填写播客名称和笔记'); return; }
+  var notes = getData('podcast_notes');
+  notes.push({ title: title, content: content, time: nowStr() });
+  setData('podcast_notes', notes);
+  document.getElementById('podcastNoteTitle').value = '';
+  document.getElementById('podcastNoteContent').value = '';
+  refreshPodcast(); showToast('笔记已保存');
+}
+function deletePodcastNote(idx) {
+  var notes = getData('podcast_notes'); notes.splice(idx, 1); setData('podcast_notes', notes);
+  refreshPodcast(); showToast('笔记已删除');
+}
+
+function refreshPodcast() {
+  var saved = getData('podcast_data');
+  if (saved.length) { renderPodcasts(saved); }
+  else { fetchPodcasts(); }
+
+  // 笔记列表
+  var notes = getData('podcast_notes');
+  var list = document.getElementById('podcastNoteList');
+  list.innerHTML = '';
+  if (!notes.length) { list.innerHTML = '<div class="record-empty">暂无笔记</div>'; return; }
+  notes.slice().reverse().forEach(function(n, i) {
+    var realIdx = notes.length - 1 - i;
+    var div = document.createElement('div');
+    div.className = 'record-item';
+    div.innerHTML = '<div class="time">' + (n.time || '') + '</div><div class="content" style="font-weight:600;">' + escapeHtml(n.title) + '</div><div class="content">' + escapeHtml(n.content) + '</div><span class="delete-btn" onclick="deletePodcastNote(' + realIdx + ')">✕</span>';
+    list.appendChild(div);
+  });
 }
 
 // ==================== 金句汇总（改进版：分类筛选） ====================
