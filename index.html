@@ -1018,11 +1018,20 @@ function refreshDaily() {
   list.innerHTML = '';
   if (!tasks.length) { list.innerHTML = '<li class="record-empty">暂无任务，添加一个吧</li>'; }
   else {
-    tasks.forEach(function(t, i){
+    // 按时间排序：有时间的在前，没时间的在后；时间相同按添加顺序
+    var sorted = tasks.map(function(t, i) { return { t: t, i: i }; });
+    sorted.sort(function(a, b) {
+      var ta = a.t.time || '99:99';
+      var tb = b.t.time || '99:99';
+      if (ta === tb) return a.i - b.i;
+      return ta < tb ? -1 : 1;
+    });
+    sorted.forEach(function(item) {
+      var t = item.t, i = item.i;
       var li = document.createElement('li');
       li.className = 'task-item' + (t.done ? ' checked' : '');
       li.innerHTML = '<input type="checkbox" ' + (t.done ? 'checked' : '') + ' onchange="toggleTaskByIdx(' + i + ')">' +
-        '<div style="flex:1;"><div>' + (t.time ? '<span style="color:var(--primary);font-weight:600;">' + t.time + '</span> ' : '') + t.name + '</div>' +
+        '<div style="flex:1;"><div>' + (t.time ? '<span style="color:var(--primary);font-weight:600;">' + t.time + '</span> ' : '📌 ') + t.name + '</div>' +
         '<div style="font-size:12px;color:var(--text-light);margin-top:2px;">' + (t.type || '') + ' ' + (t.priority || '') + (t.note ? ' | ' + t.note : '') + '</div></div>' +
         '<span style="color:var(--danger);font-size:18px;cursor:pointer;" onclick="deleteTask(' + i + ')">✕</span>';
       list.appendChild(li);
