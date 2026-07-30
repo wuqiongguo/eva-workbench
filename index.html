@@ -249,6 +249,23 @@
   .inline-row { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
   .inline-row input { flex: 1; }
   .inline-row .btn { width: auto; }
+
+  /* 月度日历 */
+  .calendar-day {
+    aspect-ratio: 1;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 8px; font-size: 14px; font-weight: 500;
+    cursor: pointer; transition: all 0.15s; position: relative;
+  }
+  .calendar-day:hover, .calendar-day:active { transform: scale(0.92); }
+  .calendar-day.today { border: 2px solid var(--primary); font-weight: 700; }
+  .calendar-day.selected { background: var(--primary); color: #fff; }
+  .calendar-day.empty { cursor: default; }
+  .calendar-day.other-month { color: #ccc; cursor: default; }
+  .calendar-day .dot-indicator {
+    position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%);
+    width: 5px; height: 5px; border-radius: 50%; background: var(--primary);
+  }
 </style>
 </head>
 <body>
@@ -298,6 +315,21 @@
         <button class="btn btn-outline btn-sm" onclick="changeDay(1)" style="padding:8px 12px;font-size:16px;">▶</button>
         <button class="btn btn-sm" style="background:var(--primary);color:#fff;padding:8px 14px;" onclick="goToday()">今天</button>
       </div>
+    </div>
+    <!-- 月度日历视图 -->
+    <div class="section-card" id="monthCalendar" style="display:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <button class="btn btn-outline btn-sm" onclick="changeMonth(-1)" style="padding:6px 10px;">◀</button>
+        <div id="monthLabel" style="font-weight:700;font-size:16px;"></div>
+        <button class="btn btn-outline btn-sm" onclick="changeMonth(1)" style="padding:6px 10px;">▶</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:12px;color:var(--text-light);margin-bottom:4px;">
+        <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
+      </div>
+      <div id="calendarGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;"></div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:4px;">
+      <button class="btn btn-outline btn-sm" id="toggleCalendarBtn" onclick="toggleCalendar()" style="font-size:12px;padding:6px 14px;">📅 月度视图</button>
     </div>
     <div class="stats-row">
       <div class="stat-card"><div class="num" id="dailyDone">0</div><div class="label">已完成任务</div></div>
@@ -990,6 +1022,102 @@ document.getElementById('dailyFocus').addEventListener('input', function() {
     } catch(e) {}
   }
 })();
+
+// ==================== 月度日历视图 ====================
+var calendarMonth = new Date().getMonth() + 1;
+var calendarYear = new Date().getFullYear();
+var calendarVisible = false;
+
+function toggleCalendar() {
+  calendarVisible = !calendarVisible;
+  var cal = document.getElementById('monthCalendar');
+  var btn = document.getElementById('toggleCalendarBtn');
+  if (calendarVisible) {
+    cal.style.display = 'block';
+    btn.textContent = '📅 收起日历';
+    // 默认显示当前选中日期所在的月份
+    var parts = dailySelectedDate.split('-');
+    calendarYear = parseInt(parts[0]);
+    calendarMonth = parseInt(parts[1]);
+    renderCalendar();
+  } else {
+    cal.style.display = 'none';
+    btn.textContent = '📅 月度视图';
+  }
+}
+
+function changeMonth(offset) {
+  calendarMonth += offset;
+  if (calendarMonth > 12) { calendarMonth = 1; calendarYear++; }
+  if (calendarMonth < 1) { calendarMonth = 12; calendarYear--; }
+  renderCalendar();
+}
+
+function getCompletionRate(dStr) {
+  var tasks = getData('tasks_' + dStr);
+  if (!tasks.length) return -1; // -1 表示无任务
+  var done = tasks.filter(function(t){ return t.done; }).length;
+  return done / tasks.length;
+}
+
+function renderCalendar() {
+  document.getElementById('monthLabel').textContent = calendarYear + '年 ' + calendarMonth + '月';
+
+  var grid = document.getElementById('calendarGrid');
+  grid.innerHTML = '';
+
+  var firstDay = new Date(calendarYear, calendarMonth - 1, 1).getDay();
+  var daysInMonth = new Date(calendarYear, calendarMonth, 0).getDate();
+  var prevMonthDays = new Date(calendarYear, calendarMonth - 1, 0).getDate();
+
+  var t = todayStr();
+  var sel = dailySelectedDate;
+
+  // 上月填充
+  for (var i = firstDay - 1; i >= 0; i--) {
+    var div = document.createElement('div');
+    div.className = 'calendar-day empty other-month';
+    div.textContent = prevMonthDays - i;
+    grid.appendChild(div);
+  }
+
+  // 本月日期
+  for (var d = 1; d <= daysInMonth; d++) {
+    var dStr = calendarYear + '-' + String(calendarMonth).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+    var div = document.createElement('div');
+    div.className = 'calendar-day';
+    if (dStr === t) div.classList.add('today');
+    if (dStr === sel) div.classList.add('selected');
+
+    var rate = getCompletionRate(dStr);
+    if (rate >= 0) {
+      // 有任务：根据完成率着色
+      var green = Math.round(rate * 200 + 55);
+      div.style.background = 'rgba(16, 185, 129, ' + (0.1 + rate * 0.5) + ')';
+      div.style.color = rate >= 0.6 ? '#fff' : '#065f46';
+      div.style.fontWeight = '600';
+      if (rate >= 0.99) {
+        div.innerHTML = d + '<span class="dot-indicator" style="background:#fff;"></span>';
+      } else {
+        div.innerHTML = d + '<span class="dot-indicator"></span>';
+      }
+    } else {
+      div.textContent = d;
+    }
+
+    div.onclick = function(dateStr) {
+      return function() {
+        dailySelectedDate = dateStr;
+        refreshDaily();
+        renderCalendar();
+        calendarVisible = true;
+        document.getElementById('monthCalendar').style.display = 'block';
+        document.getElementById('toggleCalendarBtn').textContent = '📅 收起日历';
+      };
+    }(dStr);
+    grid.appendChild(div);
+  }
+}
 
 // ==================== 备忘录 ====================
 function refreshMemo() {
