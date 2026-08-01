@@ -266,6 +266,44 @@
     position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%);
     width: 5px; height: 5px; border-radius: 50%; background: var(--primary);
   }
+
+  /* 美学素材库 */
+  .image-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  }
+  .image-card {
+    border-radius: 12px; overflow: hidden; position: relative;
+    cursor: pointer; box-shadow: var(--shadow); background: #f3f4f6;
+    aspect-ratio: 1;
+  }
+  .image-card img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+  }
+  .image-card .img-label {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: linear-gradient(transparent, rgba(0,0,0,0.7));
+    color: #fff; font-size: 12px; padding: 16px 8px 6px;
+  }
+  .image-card .img-delete {
+    position: absolute; top: 4px; right: 4px;
+    width: 24px; height: 24px; border-radius: 50%;
+    background: rgba(0,0,0,0.5); color: #fff;
+    font-size: 14px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+  .image-card .img-cat {
+    position: absolute; top: 4px; left: 4px;
+    padding: 2px 8px; border-radius: 10px;
+    background: rgba(16,185,129,0.9); color: #fff; font-size: 11px;
+  }
+  .push-card {
+    border-radius: 12px; overflow: hidden; margin-bottom: 10px;
+    box-shadow: var(--shadow); background: var(--card-bg);
+  }
+  .push-card img { width: 100%; display: block; }
+  .push-card .push-body { padding: 12px; }
+  .push-card .push-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .push-card .push-meta { font-size: 12px; color: var(--text-secondary); }
 </style>
 </head>
 <body>
@@ -293,6 +331,7 @@
   <div class="sidebar-item" data-page="video" onclick="switchPage('video')"><span class="icon">🎬</span><span>拍摄剪辑</span></div>
   <div class="sidebar-item" data-page="posture" onclick="switchPage('posture')"><span class="icon">🧘‍♀️</span><span>体态管理</span></div>
   <div class="sidebar-item" data-page="art" onclick="switchPage('art')"><span class="icon">🎨</span><span>写字画画</span></div>
+  <div class="sidebar-item" data-page="aesthetic" onclick="switchPage('aesthetic')"><span class="icon">🪐</span><span>美学素材库</span></div>
   <div class="sidebar-item" data-page="review" onclick="switchPage('review')"><span class="icon">🔍</span><span>今日复盘</span></div>
   <div class="sidebar-item" data-page="practice" onclick="switchPage('practice')"><span class="icon">🧘</span><span>日常修行</span></div>
 </div>
@@ -850,6 +889,121 @@
     </div>
   </div>
 
+  <!-- ========== 美学素材库 ========== -->
+  <div id="page-aesthetic" class="page hidden">
+    <div class="page-header">
+      <h2><span class="emoji">🪐</span>美学素材库</h2>
+      <div class="subtitle">收藏美 · 发现美 · 创造美</div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="num" id="aestheticCount">0</div><div class="label">收藏素材</div></div>
+      <div class="stat-card"><div class="num" id="aestheticCats">0</div><div class="label">分类数</div></div>
+    </div>
+
+    <!-- 每日推送 -->
+    <div class="section-card">
+      <div class="section-title"><span class="icon">🌅</span>每日美学推送 <span style="margin-left:auto;font-size:12px;color:var(--text-light);">每日7:00更新</span></div>
+      <div class="tabs" id="aestheticPushTabs">
+        <div class="tab active" onclick="switchPushTab('visual')">👁️ 视觉</div>
+        <div class="tab" onclick="switchPushTab('space')">🏠 空间</div>
+        <div class="tab" onclick="switchPushTab('home')">🛋️ 居家</div>
+        <div class="tab" onclick="switchPushTab('light')">💡 光影</div>
+        <div class="tab" onclick="switchPushTab('fashion')">👗 穿搭</div>
+        <div class="tab" onclick="switchPushTab('art')">🎨 艺术</div>
+        <div class="tab" onclick="switchPushTab('food')">🍽️ 饮食</div>
+        <div class="tab" onclick="switchPushTab('daily')">🌸 日常</div>
+        <div class="tab" onclick="switchPushTab('style')">✨ 风格</div>
+        <div class="tab" onclick="switchPushTab('media')">🎬 影音</div>
+      </div>
+      <div id="pushContent"></div>
+    </div>
+
+    <!-- 美学知识 -->
+    <div class="section-card">
+      <div class="section-title"><span class="icon">📚</span>美学知识</div>
+      <div class="tabs" id="aestheticKnowTabs">
+        <div class="tab active" onclick="switchKnowTab('composition')">📐 构图</div>
+        <div class="tab" onclick="switchKnowTab('color')">🎨 配色</div>
+        <div class="tab" onclick="switchKnowTab('light')">💡 光影</div>
+      </div>
+      <div id="knowContent"></div>
+    </div>
+
+    <!-- 多渠道搜索 -->
+    <div class="section-card">
+      <div class="section-title"><span class="icon">🔍</span>美学搜索</div>
+      <div class="search-box">
+        <input class="form-input" id="aestheticSearch" placeholder="搜索美学灵感，如：极简家居、莫兰迪配色">
+        <button class="btn btn-primary" onclick="doAestheticSearch()" style="width:auto;padding:12px 20px;">搜索</button>
+      </div>
+      <div class="platform-grid" style="margin-top:12px;">
+        <div class="platform-card" onclick="openAestheticSearch('pinterest')"><div class="icon">📌</div><div class="name">Pinterest</div><div class="desc">全球灵感</div></div>
+        <div class="platform-card" onclick="openAestheticSearch('xiaohongshu')"><div class="icon">📕</div><div class="name">小红书</div><div class="desc">生活美学</div></div>
+        <div class="platform-card" onclick="openAestheticSearch('huaban')"><div class="icon">🌸</div><div class="name">花瓣网</div><div class="desc">设计素材</div></div>
+        <div class="platform-card" onclick="openAestheticSearch('bilibili')"><div class="icon">📺</div><div class="name">B站</div><div class="desc">视频教程</div></div>
+        <div class="platform-card" onclick="openAestheticSearch('zcool')"><div class="icon">🎨</div><div class="name">站酷</div><div class="desc">设计师社区</div></div>
+        <div class="platform-card" onclick="openAestheticSearch('unsplash')"><div class="icon">📷</div><div class="name">Unsplash</div><div class="desc">高清图片</div></div>
+      </div>
+    </div>
+
+    <!-- 添加素材 -->
+    <div class="section-card">
+      <div class="section-title"><span class="icon">➕</span>添加素材</div>
+      <div class="form-group">
+        <select class="form-select" id="aestheticCat">
+          <option value="视觉">👁️ 视觉</option>
+          <option value="空间">🏠 空间</option>
+          <option value="居家">🛋️ 居家</option>
+          <option value="光影">💡 光影</option>
+          <option value="穿搭">👗 穿搭</option>
+          <option value="艺术">🎨 艺术</option>
+          <option value="饮食">🍽️ 饮食</option>
+          <option value="日常">🌸 日常</option>
+          <option value="风格">✨ 风格</option>
+          <option value="影音">🎬 影音</option>
+        </select>
+      </div>
+      <div class="form-group"><input class="form-input" id="aestheticImgUrl" placeholder="图片链接（粘贴网址）"></div>
+      <div class="form-group"><input class="form-input" id="aestheticTitle" placeholder="素材标题（可选）"></div>
+      <div class="form-group"><textarea class="form-textarea" id="aestheticNote" placeholder="备注/灵感描述..." style="min-height:60px;"></textarea></div>
+      <button class="btn btn-primary" onclick="addAestheticItem()">收藏素材</button>
+    </div>
+
+    <!-- 素材收藏 -->
+    <div class="section-card">
+      <div class="section-title"><span class="icon">🗂️</span>我的素材库</div>
+      <div class="filter-tabs" id="aestheticFilterTabs">
+        <div class="filter-tab active" onclick="filterAesthetic('all')">全部</div>
+        <div class="filter-tab" onclick="filterAesthetic('视觉')">视觉</div>
+        <div class="filter-tab" onclick="filterAesthetic('空间')">空间</div>
+        <div class="filter-tab" onclick="filterAesthetic('居家')">居家</div>
+        <div class="filter-tab" onclick="filterAesthetic('光影')">光影</div>
+        <div class="filter-tab" onclick="filterAesthetic('穿搭')">穿搭</div>
+        <div class="filter-tab" onclick="filterAesthetic('艺术')">艺术</div>
+        <div class="filter-tab" onclick="filterAesthetic('饮食')">饮食</div>
+        <div class="filter-tab" onclick="filterAesthetic('日常')">日常</div>
+        <div class="filter-tab" onclick="filterAesthetic('风格')">风格</div>
+        <div class="filter-tab" onclick="filterAesthetic('影音')">影音</div>
+      </div>
+      <div class="image-grid" id="aestheticGrid"></div>
+    </div>
+
+    <!-- 展览推荐 -->
+    <div class="section-card">
+      <div class="section-title"><span class="icon">🖼️</span>展览推荐</div>
+      <div id="exhibitList"></div>
+    </div>
+
+    <!-- 学习记录 -->
+    <div class="section-card">
+      <div class="section-title"><span class="icon">📝</span>学习记录</div>
+      <div class="form-group"><input class="form-input" id="aestheticLearnTitle" placeholder="学习主题"></div>
+      <div class="form-group"><textarea class="form-textarea" id="aestheticLearnNote" placeholder="记录美学学习心得..."></textarea></div>
+      <button class="btn btn-primary" onclick="saveAestheticLearn()">保存记录</button>
+      <div id="aestheticLearnList" style="margin-top:12px;"></div>
+    </div>
+  </div>
+
   <!-- ========== 今日复盘 ========== -->
   <div id="page-review" class="page hidden">
     <div class="page-header">
@@ -959,7 +1113,8 @@ var pageInfo = {
   podcast: { emoji: '🎙️', name: '播客精选' }, quotes: { emoji: '💬', name: '金句汇总' },
   health: { emoji: '🌿', name: '养生知识' }, english: { emoji: '🔤', name: '英语学习' },
   video: { emoji: '🎬', name: '拍摄剪辑' }, posture: { emoji: '🧘‍♀️', name: '体态管理' },
-  art: { emoji: '🎨', name: '写字画画' }, review: { emoji: '🔍', name: '今日复盘' },
+  art: { emoji: '🎨', name: '写字画画' }, aesthetic: { emoji: '🪐', name: '美学素材库' },
+  review: { emoji: '🔍', name: '今日复盘' },
   practice: { emoji: '🧘', name: '日常修行' }
 };
 
@@ -989,7 +1144,8 @@ function refreshPage(page) {
   if (page === 'podcast') refreshPodcast(); if (page === 'quotes') refreshQuotes();
   if (page === 'health') refreshHealth(); if (page === 'english') refreshEnglish();
   if (page === 'video') refreshVideo(); if (page === 'posture') refreshPosture();
-  if (page === 'art') refreshArt(); if (page === 'review') refreshReview();
+  if (page === 'art') refreshArt(); if (page === 'aesthetic') refreshAesthetic();
+  if (page === 'review') refreshReview();
   if (page === 'practice') refreshPractice();
 }
 
@@ -1819,6 +1975,230 @@ function refreshArt() {
     li.className = 'record-item';
     li.innerHTML = '<div class="time">' + (r.time || '') + ' · ' + r.type + '</div><div class="content"><strong>' + escapeHtml(r.title) + '</strong></div>' + (r.note ? '<div class="time">' + escapeHtml(r.note) + '</div>' : '');
     list.appendChild(li);
+  });
+}
+
+// ==================== 美学素材库 ====================
+var aestheticCats = ['视觉','空间','居家','光影','穿搭','艺术','饮食','日常','风格','影音'];
+var aestheticCatIcons = {'视觉':'👁️','空间':'🏠','居家':'🛋️','光影':'💡','穿搭':'👗','艺术':'🎨','饮食':'🍽️','日常':'🌸','风格':'✨','影音':'🎬'};
+var currentAestheticFilter = 'all';
+var currentPushTab = 'visual';
+var currentKnowTab = 'composition';
+
+// 每日推送内容
+var pushContent = {
+  visual: { title: '视觉美学：留白的力量', desc: '少即是多，留白让画面更有呼吸感。今天欣赏一组极简视觉作品。', img: 'https://images.unsplash.com/photo-1557682250-33bd709cbe85?w=600' },
+  space: { title: '空间美学：开放式布局', desc: '打破墙体束缚，让光线和空气自由流动。欣赏优秀空间设计案例。', img: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=600' },
+  home: { title: '居家美学：侘寂风', desc: '不完美中的美，朴素中的优雅。今天感受侘寂家居的魅力。', img: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600' },
+  light: { title: '光影美学：自然光的魔力', desc: '光是最好的设计师，影是最美的装饰。欣赏光影艺术作品。', img: 'https://images.unsplash.com/photo-1542038784456-1ea8e935640e?w=600' },
+  fashion: { title: '穿搭美学：胶囊衣橱', desc: '用少量经典单品搭配无限可能。今天学习胶囊衣橱配色法则。', img: 'https://images.unsplash.com/photo-1492707892479-7bc8d5a4ee93?w=600' },
+  art: { title: '艺术美学：莫奈的花园', desc: '印象派大师笔下的光影与色彩，感受自然与艺术的交融。', img: 'https://images.unsplash.com/photo-1578926375605-eaf7559b1458?w=600' },
+  food: { title: '饮食美学：摆盘的艺术', desc: '一道好菜先喂眼睛再喂胃。欣赏精致料理摆盘设计。', img: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600' },
+  daily: { title: '日常美学：一花一世界', desc: '美不在远方，在日常的每个角落。发现生活中的小确幸。', img: 'https://images.unsplash.com/photo-1481277542470-605612bd2d61?w=600' },
+  style: { title: '风格美学：莫兰迪色系', desc: '低饱和度的高级感，温柔而不张扬。学习莫兰迪配色应用。', img: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600' },
+  media: { title: '影音美学：电影构图', desc: '每一帧都是一幅画。欣赏韦斯·安德森的对称构图美学。', img: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=600' }
+};
+
+// 美学知识
+var knowContent = {
+  composition: [
+    '📐 三分法：将画面分为九宫格，主体放在交叉点上',
+    '📐 引导线：利用线条引导视线走向主体',
+    '📐 对称构图：营造平衡与庄重感',
+    '📐 框架构图：用前景元素框住主体',
+    '📐 对角线：增加动态感和张力',
+    '📐 留白：给画面呼吸感，突出主体',
+    '📐 黄金分割：0.618比例，天然和谐',
+    '📐 重复与韵律：元素的重复形成节奏感'
+  ],
+  color: [
+    '🎨 互补色：色轮上相对的颜色，对比强烈',
+    '🎨 邻近色：色轮上相邻的颜色，和谐统一',
+    '🎨 60-30-10法则：主色60%，辅色30%，点缀色10%',
+    '🎨 莫兰迪色系：低饱和度，高级温柔',
+    '🎨 暖色调：温馨热情，红橙黄',
+    '🎨 冷色调：宁静清新，蓝绿紫',
+    '🎨 黑白灰：永恒经典，极简主义',
+    '🎨 同色系深浅：层次丰富不杂乱'
+  ],
+  light: [
+    '💡 顺光：色彩鲜艳，细节清晰',
+    '💡 侧光：立体感强，质感丰富',
+    '💡 逆光：剪影效果，氛围感强',
+    '💡 顶光：正午光线，阴影垂直',
+    '💡 黄金时段：日出日落前后1小时，光线柔和',
+    '💡 蓝调时刻：日出前日落后，冷蓝调',
+    '💡 柔光：阴天/柔光箱，适合人像',
+    '💡 硬光：直射阳光，阴影锐利'
+  ]
+};
+
+function switchPushTab(tab) {
+  currentPushTab = tab;
+  document.querySelectorAll('#aestheticPushTabs .tab').forEach(function(t){
+    t.classList.toggle('active', t.onclick && t.textContent.includes(aestheticCatIcons[tab] ? aestheticCatIcons[tab] : tab));
+  });
+  document.querySelectorAll('#aestheticPushTabs .tab').forEach(function(t){ t.classList.remove('active'); });
+  event.target.classList.add('active');
+  renderPush();
+}
+function renderPush() {
+  var p = pushContent[currentPushTab];
+  var container = document.getElementById('pushContent');
+  container.innerHTML = '';
+  var div = document.createElement('div');
+  div.className = 'push-card';
+  div.innerHTML =
+    '<img src="' + p.img + '" alt="' + p.title + '" onerror="this.style.display=\'none\'" style="height:200px;object-fit:cover;">' +
+    '<div class="push-body">' +
+      '<div class="push-title">' + p.title + '</div>' +
+      '<div class="push-meta">' + p.desc + '</div>' +
+      '<div class="push-meta" style="margin-top:6px;color:var(--primary);">' + todayStr() + ' 07:00 推送</div>' +
+    '</div>';
+  container.appendChild(div);
+}
+
+function switchKnowTab(tab) {
+  currentKnowTab = tab;
+  document.querySelectorAll('#aestheticKnowTabs .tab').forEach(function(t){ t.classList.remove('active'); });
+  event.target.classList.add('active');
+  renderKnow();
+}
+function renderKnow() {
+  var items = knowContent[currentKnowTab];
+  var container = document.getElementById('knowContent');
+  container.innerHTML = '<ul class="knowledge-list">';
+  items.forEach(function(item) {
+    container.innerHTML += '<li>' + item + '</li>';
+  });
+  container.innerHTML += '</ul>';
+}
+
+function doAestheticSearch() {
+  var kw = document.getElementById('aestheticSearch').value.trim();
+  if (!kw) { showToast('请输入关键词'); return; }
+  window.open('https://www.pinterest.com/search/pins/?q=' + encodeURIComponent(kw), '_blank');
+}
+
+function openAestheticSearch(platform) {
+  var kw = document.getElementById('aestheticSearch').value.trim() || '美学灵感';
+  var urls = {
+    pinterest: 'https://www.pinterest.com/search/pins/?q=',
+    xiaohongshu: 'https://www.xiaohongshu.com/search_result?keyword=',
+    huaban: 'https://huaban.com/search?q=',
+    bilibili: 'https://search.bilibili.com/all?keyword=',
+    zcool: 'https://www.zcool.com.cn/search/content?word=',
+    unsplash: 'https://unsplash.com/s/photos/'
+  };
+  window.open(urls[platform] + encodeURIComponent(kw), '_blank');
+}
+
+function addAestheticItem() {
+  var url = document.getElementById('aestheticImgUrl').value.trim();
+  var cat = document.getElementById('aestheticCat').value;
+  var title = document.getElementById('aestheticTitle').value.trim();
+  var note = document.getElementById('aestheticNote').value.trim();
+  if (!url) { showToast('请输入图片链接'); return; }
+  var items = getData('aesthetic_items');
+  items.push({ url: url, cat: cat, title: title || cat + '素材', note: note, time: nowStr() });
+  setData('aesthetic_items', items);
+  document.getElementById('aestheticImgUrl').value = '';
+  document.getElementById('aestheticTitle').value = '';
+  document.getElementById('aestheticNote').value = '';
+  refreshAesthetic();
+  showToast('素材已收藏');
+}
+
+function filterAesthetic(cat) {
+  currentAestheticFilter = cat;
+  document.querySelectorAll('#aestheticFilterTabs .filter-tab').forEach(function(t){
+    t.classList.toggle('active', (cat === 'all' && t.textContent === '全部') || t.textContent === cat);
+  });
+  renderAestheticGrid();
+}
+
+function deleteAestheticItem(idx) {
+  var items = getData('aesthetic_items');
+  items.splice(idx, 1);
+  setData('aesthetic_items', items);
+  refreshAesthetic();
+  showToast('素材已删除');
+}
+
+function renderAestheticGrid() {
+  var items = getData('aesthetic_items');
+  var filtered = currentAestheticFilter === 'all' ? items : items.filter(function(i){ return i.cat === currentAestheticFilter; });
+  var grid = document.getElementById('aestheticGrid');
+  grid.innerHTML = '';
+  if (!filtered.length) { grid.innerHTML = '<div class="record-empty" style="grid-column:span 2;">暂无素材，添加你喜欢的图片吧</div>'; return; }
+  filtered.slice().reverse().forEach(function(item, i) {
+    var realIdx = items.indexOf(item);
+    var div = document.createElement('div');
+    div.className = 'image-card';
+    div.innerHTML =
+      '<img src="' + escapeHtml(item.url) + '" onerror="this.parentElement.innerHTML=\'<div style=\\'display:flex;align-items:center;justify-content:center;height:100%;color:#999;font-size:12px;\\'>图片加载失败</div>\'" onclick="window.open(\'' + escapeHtml(item.url) + '\',\'_blank\')">' +
+      '<div class="img-cat">' + (aestheticCatIcons[item.cat] || '') + ' ' + item.cat + '</div>' +
+      '<div class="img-label">' + escapeHtml(item.title) + (item.note ? '<br><span style="font-size:11px;opacity:0.8;">' + escapeHtml(item.note) + '</span>' : '') + '</div>' +
+      '<div class="img-delete" onclick="event.stopPropagation();deleteAestheticItem(' + realIdx + ')">✕</div>';
+    grid.appendChild(div);
+  });
+}
+
+function saveAestheticLearn() {
+  var title = document.getElementById('aestheticLearnTitle').value.trim();
+  var note = document.getElementById('aestheticLearnNote').value.trim();
+  if (!title || !note) { showToast('请填写主题和内容'); return; }
+  var records = getData('aesthetic_learn');
+  records.push({ title: title, note: note, time: nowStr() });
+  setData('aesthetic_learn', records);
+  document.getElementById('aestheticLearnTitle').value = '';
+  document.getElementById('aestheticLearnNote').value = '';
+  refreshAesthetic();
+  showToast('记录已保存');
+}
+function deleteAestheticLearn(idx) {
+  var records = getData('aesthetic_learn'); records.splice(idx, 1); setData('aesthetic_learn', records);
+  refreshAesthetic(); showToast('记录已删除');
+}
+
+var exhibitData = [
+  { name: '莫奈特展', place: '上海博物馆', date: '2026年7-9月', desc: '印象派大师经典作品展' },
+  { name: '设计上海2026', place: '上海世博展览馆', date: '2026年6月', desc: '亚洲领先国际设计展' },
+  { name: 'teamLab无界', place: '上海黄浦滨江', date: '常设展', desc: '沉浸式数字艺术体验' },
+  { name: '草间弥生：我爱我', place: '北京中间美术馆', date: '2026年8-10月', desc: '波点女王个展' }
+];
+
+function refreshAesthetic() {
+  renderPush();
+  renderKnow();
+  renderAestheticGrid();
+
+  var items = getData('aesthetic_items');
+  document.getElementById('aestheticCount').textContent = items.length;
+  var cats = new Set(items.map(function(i){ return i.cat; }));
+  document.getElementById('aestheticCats').textContent = cats.size;
+
+  // 展览
+  var exhibit = document.getElementById('exhibitList');
+  exhibit.innerHTML = '';
+  exhibitData.forEach(function(e) {
+    var div = document.createElement('div');
+    div.className = 'record-item';
+    div.innerHTML = '<div class="content" style="font-weight:600;">🖼️ ' + e.name + '</div><div class="time">📍 ' + e.place + ' · 📅 ' + e.date + '</div><div class="time">' + e.desc + '</div>';
+    exhibit.appendChild(div);
+  });
+
+  // 学习记录
+  var records = getData('aesthetic_learn');
+  var list = document.getElementById('aestheticLearnList');
+  list.innerHTML = '';
+  if (!records.length) { list.innerHTML = '<div class="record-empty">暂无记录</div>'; return; }
+  records.slice().reverse().forEach(function(r, i) {
+    var realIdx = records.length - 1 - i;
+    var div = document.createElement('div');
+    div.className = 'record-item';
+    div.innerHTML = '<div class="time">' + (r.time || '') + '</div><div class="content" style="font-weight:600;">' + escapeHtml(r.title) + '</div><div class="content">' + escapeHtml(r.note) + '</div><span class="delete-btn" onclick="deleteAestheticLearn(' + realIdx + ')">✕</span>';
+    list.appendChild(div);
   });
 }
 
